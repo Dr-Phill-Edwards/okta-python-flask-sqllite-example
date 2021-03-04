@@ -16,6 +16,7 @@ signIn.renderEl({
     if (res.status === 'SUCCESS') {
         accessToken = res.tokens.accessToken.accessToken;
         signIn.hide();
+        onmessage()
     } else {
         alert('fail);')
     }
@@ -37,12 +38,12 @@ function onmessage() {
     })
     .then((response) => {
         if (!response.ok) {
-            throw new Error(response.error)
+            throw new Error(response.json())
         }
         return response.json();
     })
     .then(data => {
-        document.getElementById('messages').value = data.messages;
+        document.getElementById('messages').value = data.messages.join('\n');
     })
     .catch(function(error) {
         document.getElementById('messages').value = error;

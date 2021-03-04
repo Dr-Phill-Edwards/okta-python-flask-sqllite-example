@@ -1,11 +1,7 @@
 import os
 import sqlite3
 from flask import Flask, request, jsonify, abort
-from jwt.jwks import JWKS
-from jwt.jwt import JWT
-
-claims = { 'iss': os.environ['OKTA_ISSUER_URI'], 'aud': 'api://default' }
-jwks = JWKS(os.environ['OKTA_ISSUER_URI'] + '/v1/keys')
+from okta_jwt.jwt import validate_token
 
 app = Flask(__name__, static_url_path='', static_folder='client')
 
@@ -20,23 +16,41 @@ def serve_static(file):
 def verify():
     auth = request.headers.get('Authorization')
     if auth is None or not auth.startswith('Bearer '):
-        abort(401, description="Unauthorized")
+        abort(401, description="Authorization required")
     token = auth[7:]
     try:
-        jwt = JWT(token, claims, 2)
-        jwks.verify(jwt)
+        validate_token(token, os.environ['OKTA_ISSUER_URI'], 'api://default', os.environ['OKTA_CLIENT_ID'])
     except Exception as e:
-        abort(403, e)
+        abort(403, "Unauthorized")
+
+def readMessages():
+    connection = sqlite3.connect('message.db')
+    cursor = connection.cursor()
+    cursor.execute('SELECT id, message FROM messages ORDER BY id')
+    messages = []
+    for row in cursor:
+        messages.append(row[1])
+    connection.close()
+    print(messages)
+    return messages
 
 @app.route('/api/messages', methods=['GET'])
 def getMessages():
     verify()
+    messages = readMessages()
+    return jsonify( { 'messages': messages } )
 
 @app.route('/api/messages', methods=['POST'])
 def addMessage():
     verify()
+    connection = sqlite3.connect('message.db')
     msg = request.form.get('message')
-    messages.append(msg)
+    msg = (msg,)
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO messages (message) VALUES(?)", msg)
+    connection.commit()
+    connection.close()
+    messages = readMessages()
     return jsonify( { 'messages': messages } )
 
 app.run(host='0.0.0.0', port=8080)
