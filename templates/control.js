@@ -1,11 +1,11 @@
 var accessToken = null;
 
 var signIn = new OktaSignIn({
-    baseUrl: 'http://dev-436256.okta.com',
-    clientId: '0oaavsqp2YFRRTL5x5d5',
+    baseUrl: '{{okta_domain}}',
+    clientId: '{{okta_clinet_id}}',
     redirectUri: window.location.origin,
     authParams: {
-        issuer: 'https://dev-436256.okta.com/oauth2/default',
+        issuer: '{{okta_issuer_uri}}',
         responseType: ['token', 'id_token']
     }
 });
