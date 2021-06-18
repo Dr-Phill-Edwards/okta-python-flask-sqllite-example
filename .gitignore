@@ -1,2 +1,5 @@
 ._*
 message.db
+.venv
+env
+
